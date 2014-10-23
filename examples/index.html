@@ -5,10 +5,13 @@
     <title>ConvertJS</title>
     <script src="../convert.js" type="text/javascript"></script>
     <script type="text/javascript">
-        var convert = new Convert();
+	var convert = new Convert({
+	    delay: 50
+	});
 
         convert.on('exit', function (event) {
-            alert("Exit");
+	    //alert("Exit");
+	    console.log("exitintent");
         });
 
         convert.on('pagebottom', function (event) {

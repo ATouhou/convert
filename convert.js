@@ -6,11 +6,12 @@
 (function () {
 
     var root = this;
-
     var _listeners = {};
     var _listenerQueue = {};
 
     var _scrollTimer = null;
+    function _merge (base, merge) {
+	var result = {};
 
     var _throttle = function (delay, callback) {
         var previousCall = new Date().getTime();
@@ -51,6 +52,66 @@
         }.bind(this), config.throttle);
     };
 
+	for (var key in base) {
+	    result[key] = base[key];
+	}
+
+	for (var key in merge) {
+	    result[key] = merge[key];
+	}
+
+	return result;
+    }
+
+    var Convert = function (options) {
+
+	var self = this;
+
+	var defaults = {
+	    aggressive: false,
+	    sensitivity: 20,
+	    delay: 0
+	};
+
+	var _timer = null;
+
+	var config = _merge(defaults, options);
+
+	var disableKeydown = false;
+
+	this.doc = null;
+
+	this._handleMouseLeave = function (event) {
+	    if (event.clientY > config.sensitivity) { return; }
+	    _timer = setTimeout(function () {
+		self.trigger({ type: 'exit' });
+	    }, config.delay);
+	};
+
+	this._handleMouseEnter = function (event) {
+	    if (_timer) {
+		clearTimeout(_timer);
+		_timer = null;
+	    }
+	};
+
+
+	this._handleKeyDown = function (event) {
+	    if (disableKeydown) { return; }
+	    disableKeydown = true;
+	    _timer = setTimeout(function () {
+		self.trigger({ type: 'exit' });
+	    }, config.delay);
+	};
+
+	if (typeof document != 'undefined') {
+	    this.doc = document.documentElement;
+	    this.doc.addEventListener('mouseleave', this._handleMouseLeave);
+	    this.doc.addEventListener('mouseenter', this._handleMouseEnter);
+	    this.doc.addEventListener('keydown', this._handleKeyDown);
+	}
+    };
+
     var supportedEvents = [
         'exit',
         'new',
@@ -74,6 +135,9 @@
     };
 
     Convert.prototype.on = function (eventType, callback) {
+
+	if(supportedEvents.indexOf(eventType) < 0) { return; }
+
         if (typeof _listeners[eventType] == 'undefined') {
             _listeners[eventType] = [];
         }
@@ -85,6 +149,8 @@
             throw new Error("Event missing 'type' property ");
         }
 
+	if(supportedEvents.indexOf(event.type) < 0) { return; }
+        
         if (typeof _listeners[event.type] != 'undefined') {
             var listeners = _listeners[event.type];
 
@@ -105,6 +171,8 @@
     };
 
     Convert.prototype.off = function (eventType, callback) {
+
+	if(supportedEvents.indexOf(event.type) < 0) { return; }
 
         if (typeof _listeners[eventType] != 'undefined') {
             var listeners = _listeners[eventType];
