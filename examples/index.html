@@ -11,7 +11,16 @@
             alert("Exit");
         });
 
+        convert.on('pagebottom', function (event) {
+            console.log("do some magic, the user is at pagebottom");
+        });
+
     </script>
+    <style>
+        body {
+            min-height: 4000px;
+        }
+    </style>
 </head>
 <body>
 
