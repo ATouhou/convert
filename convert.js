@@ -10,8 +10,6 @@
     var _listenerQueue = {};
 
     var _scrollTimer = null;
-    function _merge (base, merge) {
-	var result = {};
 
     var _throttle = function (delay, callback) {
         var previousCall = new Date().getTime();
@@ -38,78 +36,35 @@
         return merged;
     };
 
-    var Convert = function (options) {
+    var ABTest = function () {
 
-        var defaults = {
-            'throttle': 500,
-            'sensitivity': 100
-        };
-
-        var config = _merge(defaults, options);
-
-        _scrollTimer = setInterval(function () {
-            this.atBottom();
-        }.bind(this), config.throttle);
     };
 
-	for (var key in base) {
-	    result[key] = base[key];
-	}
+    var Store = function () {
 
-	for (var key in merge) {
-	    result[key] = merge[key];
-	}
+        this.setValue = function (key, value, expire) {
 
-	return result;
-    }
+        };
 
-    var Convert = function (options) {
+        this.getValue = function (key) {
 
-	var self = this;
+        };
+    };
 
-	var defaults = {
-	    aggressive: false,
-	    sensitivity: 20,
-	    delay: 0
-	};
+    var SessionStore = function () {
 
-	var _timer = null;
+    };
 
-	var config = _merge(defaults, options);
+    var CookieStore = function () {
 
-	var disableKeydown = false;
+    };
 
-	this.doc = null;
+    var ServerStore = function () {
 
-	this._handleMouseLeave = function (event) {
-	    if (event.clientY > config.sensitivity) { return; }
-	    _timer = setTimeout(function () {
-		self.trigger({ type: 'exit' });
-	    }, config.delay);
-	};
+    };
 
-	this._handleMouseEnter = function (event) {
-	    if (_timer) {
-		clearTimeout(_timer);
-		_timer = null;
-	    }
-	};
+    var LocalStorageStore = function () {
 
-
-	this._handleKeyDown = function (event) {
-	    if (disableKeydown) { return; }
-	    disableKeydown = true;
-	    _timer = setTimeout(function () {
-		self.trigger({ type: 'exit' });
-	    }, config.delay);
-	};
-
-	if (typeof document != 'undefined') {
-	    this.doc = document.documentElement;
-	    this.doc.addEventListener('mouseleave', this._handleMouseLeave);
-	    this.doc.addEventListener('mouseenter', this._handleMouseEnter);
-	    this.doc.addEventListener('keydown', this._handleKeyDown);
-	}
     };
 
     var supportedEvents = [
@@ -120,6 +75,61 @@
         'idle',
         'pagebottom'
     ];
+
+
+    var Convert = function (options) {
+
+        var self = this;
+
+        var defaults = {
+            aggressive: false,
+            sensitivity: 20,
+            delay: 0,
+            throttle: 500
+        };
+
+        var _timer = null;
+
+        var config = _merge(defaults, options);
+
+        var disableKeydown = false;
+
+        this.doc = null;
+
+        _scrollTimer = setInterval(function () {
+            this.atBottom();
+        }.bind(this), config.throttle);
+
+        this._handleMouseLeave = function (event) {
+            if (event.clientY > config.sensitivity) { return; }
+            _timer = setTimeout(function () {
+            self.trigger({ type: 'exit' });
+            }, config.delay);
+        };
+
+        this._handleMouseEnter = function (event) {
+            if (_timer) {
+            clearTimeout(_timer);
+            _timer = null;
+            }
+        };
+
+
+        this._handleKeyDown = function (event) {
+            if (disableKeydown) { return; }
+            disableKeydown = true;
+            _timer = setTimeout(function () {
+            self.trigger({ type: 'exit' });
+            }, config.delay);
+        };
+
+        if (typeof document != 'undefined') {
+            this.doc = document.documentElement;
+            this.doc.addEventListener('mouseleave', this._handleMouseLeave);
+            this.doc.addEventListener('mouseenter', this._handleMouseEnter);
+            this.doc.addEventListener('keydown', this._handleKeyDown);
+        }
+    };
 
     Convert.prototype.atBottom = function () {
         var docElement = document.documentElement;
