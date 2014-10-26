@@ -11,36 +11,37 @@
 
     var _scrollTimer = null;
 
-    var _throttle = function (delay, callback) {
-        var previousCall = new Date().getTime();
-        return function() {
-            var time = new Date().getTime();
-            if ((time - previousCall) >= delay) {
-                previousCall = time;
-                callback.apply(null, arguments);
-            }
-        };
-    };
+    function supportsNavigationTiming() {
+        return !!(window.performance && window.performance.timing);
+    }
 
     var _merge = function (base, merge) {
         var merged = {};
 
-        for (var key in base) {
-            merged[key] = base[key];
+        for (var baseKey in base) {
+            merged[baseKey] = base[baseKey];
         }
 
-        for (var key in merge) {
-            merged[key] = merge[key];
+        for (var mergeKey in merge) {
+            merged[mergeKey] = merge[mergeKey];
         }
 
         return merged;
+    };
+
+    var Utils = {
+        capitalize: function (string) {
+            return string.replace(/^./, function (match) {
+                return match.toUpperCase();
+            });
+        }
     };
 
     var ABTest = function () {
 
     };
 
-    var Store = function () {
+    var Storage = function () {
 
         this.setValue = function (key, value, expire) {
 
@@ -51,19 +52,19 @@
         };
     };
 
-    var SessionStore = function () {
+    var SessionStorage = function () {
 
     };
 
-    var CookieStore = function () {
+    var CookieStorage = function () {
 
     };
 
-    var ServerStore = function () {
+    var ServerStorage = function () {
 
     };
 
-    var LocalStorageStore = function () {
+    var LocalStorageStorage = function () {
 
     };
 
@@ -76,7 +77,6 @@
         'pagebottom'
     ];
 
-
     var Convert = function (options) {
 
         var self = this;
@@ -85,7 +85,8 @@
             aggressive: false,
             sensitivity: 20,
             delay: 0,
-            throttle: 500
+            throttle: 200,
+            storage: 'cookie'
         };
 
         var _timer = null;
@@ -95,6 +96,18 @@
         var disableKeydown = false;
 
         this.doc = null;
+
+        switch (config.storage) {
+            case 'localstorage':
+                this.storage = new LocalStorageStorage();
+                break;
+            case 'server':
+                this.storage = new ServerStorage();
+                break;
+            default:
+                this.storage = new CookieStorage();
+                break;
+        }
 
         _scrollTimer = setInterval(function () {
             this.atBottom();
@@ -114,20 +127,25 @@
             }
         };
 
-
         this._handleKeyDown = function (event) {
             if (disableKeydown) { return; }
             disableKeydown = true;
+
             _timer = setTimeout(function () {
             self.trigger({ type: 'exit' });
             }, config.delay);
         };
 
-        if (typeof document != 'undefined') {
+
+        if (typeof document !== 'undefined') {
             this.doc = document.documentElement;
             this.doc.addEventListener('mouseleave', this._handleMouseLeave);
             this.doc.addEventListener('mouseenter', this._handleMouseEnter);
             this.doc.addEventListener('keydown', this._handleKeyDown);
+        }
+
+        if (supportsNavigationTiming()) {
+
         }
     };
 
@@ -135,7 +153,7 @@
         var docElement = document.documentElement;
         var winElement = window;
 
-        if ((docElement.scrollHeight - winElement.innerHeight) == winElement.scrollY) {
+        if ((docElement.scrollHeight - winElement.innerHeight) === winElement.scrollY) {
             clearInterval(_scrollTimer);
             this.trigger({
                 type: 'pagebottom'
@@ -148,7 +166,7 @@
 
 	if(supportedEvents.indexOf(eventType) < 0) { return; }
 
-        if (typeof _listeners[eventType] == 'undefined') {
+        if (typeof _listeners[eventType] === 'undefined') {
             _listeners[eventType] = [];
         }
         _listeners[eventType].push(callback);
@@ -159,21 +177,21 @@
             throw new Error("Event missing 'type' property ");
         }
 
-	if(supportedEvents.indexOf(event.type) < 0) { return; }
+	    if(supportedEvents.indexOf(event.type) < 0) { return; }
         
-        if (typeof _listeners[event.type] != 'undefined') {
+        if (typeof _listeners[event.type] !== 'undefined') {
             var listeners = _listeners[event.type];
 
-            for (var i = 0; i < listeners.length; i++) {
-                listeners[i].call(this, event);
+            for (var listenerKey = 0; listenerKey < listeners.length; listenerKey++) {
+                listeners[listenerKey].call(this, event);
             }
         }
 
-        if (typeof _listenerQueue[event.type] != 'undefined') {
+        if (typeof _listenerQueue[event.type] !== 'undefined') {
             var listenerQueue = _listenerQueue[event.type];
 
-            for (var i=0; i < listenerQueue.length; i++) {
-                listenerQueue[i].call(this, event);
+            for (var listenerQueueKey = 0; listenerQueueKey < listenerQueue.length; listenerQueueKey++) {
+                listenerQueue[listenerQueueKey].call(this, event);
             }
 
             _listenerQueue[event.type] = [];
@@ -184,7 +202,7 @@
 
 	if(supportedEvents.indexOf(event.type) < 0) { return; }
 
-        if (typeof _listeners[eventType] != 'undefined') {
+        if (typeof _listeners[eventType] !== 'undefined') {
             var listeners = _listeners[eventType];
             for (var i = 0; i < listeners.length; i++) {
                 if (listeners[i] === callback){
@@ -196,7 +214,7 @@
     };
 
     Convert.prototype.one = function (eventType, callback) {
-        if (typeof _listenerQueue[eventType] == 'undefined') {
+        if (typeof _listenerQueue[eventType] === 'undefined') {
             _listenerQueue[eventType] = [];
         }
         _listenerQueue[eventType].push(callback);

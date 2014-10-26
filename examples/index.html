@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>ConvertJS</title>
-    <script src="../convert.js" type="text/javascript"></script>
+    <script src="../build/convert.min.js" type="text/javascript"></script>
     <script type="text/javascript">
-	var convert = new Convert({
-	    delay: 50
-	});
+
+        var convert = new Convert({
+            delay: 50
+        });
 
         convert.on('exit', function (event) {
-	    //alert("Exit");
-	    console.log("exitintent");
+	        console.log("conver.on('exit')");
         });
 
         convert.on('pagebottom', function (event) {
-            console.log("do some magic, the user is at pagebottom");
+            console.log("conver.on('pagebottom')");
         });
 
     </script>
