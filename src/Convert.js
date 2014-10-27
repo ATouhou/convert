@@ -9,23 +9,9 @@
     var Viewport = require('./Viewport');
     var User = require('./User');
     var Event = require('./Event');
+    var Idle = require('./Idle');
 
     var _scrollTimer = null;
-
-    Event.prototype.supportedEvents = [
-        'exit',
-        'new',
-        'return',
-        'firstview',
-        'idle',
-        'pagebottom',
-        'abovefold',
-        'belowfold',
-        '{nth}visit',
-        '{nth}pageview',
-        'blur',
-        'focus'
-    ];
 
     var Convert = function (options) {
 
@@ -46,37 +32,9 @@
         var disableKeydown = false;
 
         this.user = new User();
+        this.idle = new Idle();
 
-        //New user
-        if (this.user.firstview && !this.user.returning) {
-            this.trigger({
-                type: 'new'
-            });
-        }
-
-        //Returning user
-        if (this.user.firstview && this.user.returning) {
-            this.trigger({
-                type: 'return'
-            });
-        }
-
-        //First view in visit (new or returning)
-        if (this.user.firstview) {
-            this.trigger({
-                type: 'firstview'
-            });
-        }
-
-        this.trigger({
-            type: Utils.getOrdinal(this.user.session.pageviews) + 'pageview'
-        });
-
-
-        //Sgment
-
-        this.doc = null;
-
+        //Segment (direct, referral, search, social)
 
         /**
          * Used for checking if we have reached bottom of page
@@ -84,7 +42,7 @@
          * @private
          */
         _scrollTimer = setInterval(function () {
-            this.checkPosition();
+            this._checkPosition();
         }.bind(this), config.throttle);
 
         /**
@@ -117,32 +75,68 @@
             }, config.delay);
         };
 
+        this._checkPosition = function () {
+
+            if (Viewport.isAtBottom()) {
+                this.trigger({ type: 'pagebottom' });
+            }
+
+            if (Viewport.isBelowTheFold()) {
+                this.trigger({ type: 'belowfold' });
+            }
+        };
 
         if (typeof document !== 'undefined') {
-            this.doc = document.documentElement;
-            this.doc.addEventListener('mouseleave', this._handleMouseLeave);
-            this.doc.addEventListener('mouseenter', this._handleMouseEnter);
-            this.doc.addEventListener('keydown', this._handleKeyDown);
+            var doc = document.documentElement;
+            doc.addEventListener('mouseleave', this._handleMouseLeave);
+            doc.addEventListener('mouseenter', this._handleMouseEnter);
+            doc.addEventListener('keydown', this._handleKeyDown);
         }
 
         if (Utils.supportsNavigationTiming()) {
-            //Trigger events if
+            //Trigger event if time between request and DOMReady is slow
         }
+
+        var addEventTrigger = function () {
+
+            //New user
+            if (convert.user.firstview && !convert.user.returning) {
+                this.trigger({
+                    type: 'new'
+                });
+            }
+
+            //Returning user
+            if (this.user.firstview && this.user.returning) {
+                this.trigger({
+                    type: 'return'
+                });
+            }
+
+            //First view in visit (new or returning)
+            if (this.user.firstview) {
+                this.trigger({
+                    type: 'firstview'
+                });
+            }
+
+            this.trigger({
+                type: Utils.getOrdinal(this.user.visit.pageviews) + 'pageview'
+            });
+
+            this.trigger({
+                type: Utils.getOrdinal(this.user.visitor.visits) + 'visit'
+            });
+
+        }.bind(this);
+
+        setTimeout(addEventTrigger, 0);
+
     };
 
     Convert.prototype = Event.prototype;
-
-    Convert.prototype.checkPosition = function () {
-
-        if (Viewport.isAtBottom()) {
-            this.trigger({ type: 'pagebottom' });
-        }
-
-        if (Viewport.isBelowTheFold()) {
-            this.trigger({ type: 'belowfold' });
-        }
-    };
-
+    Convert.prototype.atPageBottom = Viewport.isAtBottom;
+    Convert.prototype.belowTheFold = Viewport.isBelowTheFold;
 
     if (typeof exports !== 'undefined') {
         if (typeof module !== 'undefined' && module.exports) {

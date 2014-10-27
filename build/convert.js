@@ -10,23 +10,9 @@
     var Viewport = require('./Viewport');
     var User = require('./User');
     var Event = require('./Event');
+    var Idle = require('./Idle');
 
     var _scrollTimer = null;
-
-    Event.prototype.supportedEvents = [
-        'exit',
-        'new',
-        'return',
-        'firstview',
-        'idle',
-        'pagebottom',
-        'abovefold',
-        'belowfold',
-        '{nth}visit',
-        '{nth}pageview',
-        'blur',
-        'focus'
-    ];
 
     var Convert = function (options) {
 
@@ -47,37 +33,9 @@
         var disableKeydown = false;
 
         this.user = new User();
+        this.idle = new Idle();
 
-        //New user
-        if (this.user.firstview && !this.user.returning) {
-            this.trigger({
-                type: 'new'
-            });
-        }
-
-        //Returning user
-        if (this.user.firstview && this.user.returning) {
-            this.trigger({
-                type: 'return'
-            });
-        }
-
-        //First view in visit (new or returning)
-        if (this.user.firstview) {
-            this.trigger({
-                type: 'firstview'
-            });
-        }
-
-        this.trigger({
-            type: Utils.getOrdinal(this.user.session.pageviews) + 'pageview'
-        });
-
-
-        //Sgment
-
-        this.doc = null;
-
+        //Segment (direct, referral, search, social)
 
         /**
          * Used for checking if we have reached bottom of page
@@ -85,7 +43,7 @@
          * @private
          */
         _scrollTimer = setInterval(function () {
-            this.checkPosition();
+            this._checkPosition();
         }.bind(this), config.throttle);
 
         /**
@@ -118,32 +76,68 @@
             }, config.delay);
         };
 
+        this._checkPosition = function () {
+
+            if (Viewport.isAtBottom()) {
+                this.trigger({ type: 'pagebottom' });
+            }
+
+            if (Viewport.isBelowTheFold()) {
+                this.trigger({ type: 'belowfold' });
+            }
+        };
 
         if (typeof document !== 'undefined') {
-            this.doc = document.documentElement;
-            this.doc.addEventListener('mouseleave', this._handleMouseLeave);
-            this.doc.addEventListener('mouseenter', this._handleMouseEnter);
-            this.doc.addEventListener('keydown', this._handleKeyDown);
+            var doc = document.documentElement;
+            doc.addEventListener('mouseleave', this._handleMouseLeave);
+            doc.addEventListener('mouseenter', this._handleMouseEnter);
+            doc.addEventListener('keydown', this._handleKeyDown);
         }
 
         if (Utils.supportsNavigationTiming()) {
-            //Trigger events if
+            //Trigger event if time between request and DOMReady is slow
         }
+
+        var addEventTrigger = function () {
+
+            //New user
+            if (convert.user.firstview && !convert.user.returning) {
+                this.trigger({
+                    type: 'new'
+                });
+            }
+
+            //Returning user
+            if (this.user.firstview && this.user.returning) {
+                this.trigger({
+                    type: 'return'
+                });
+            }
+
+            //First view in visit (new or returning)
+            if (this.user.firstview) {
+                this.trigger({
+                    type: 'firstview'
+                });
+            }
+
+            this.trigger({
+                type: Utils.getOrdinal(this.user.visit.pageviews) + 'pageview'
+            });
+
+            this.trigger({
+                type: Utils.getOrdinal(this.user.visitor.visits) + 'visit'
+            });
+
+        }.bind(this);
+
+        setTimeout(addEventTrigger, 0);
+
     };
 
     Convert.prototype = Event.prototype;
-
-    Convert.prototype.checkPosition = function () {
-
-        if (Viewport.isAtBottom()) {
-            this.trigger({ type: 'pagebottom' });
-        }
-
-        if (Viewport.isBelowTheFold()) {
-            this.trigger({ type: 'belowfold' });
-        }
-    };
-
+    Convert.prototype.atPageBottom = Viewport.isAtBottom;
+    Convert.prototype.belowTheFold = Viewport.isBelowTheFold;
 
     if (typeof exports !== 'undefined') {
         if (typeof module !== 'undefined' && module.exports) {
@@ -157,7 +151,7 @@
     }
 
 }.call(this));
-},{"./Event":3,"./User":4,"./Utils":5,"./Viewport":6}],2:[function(require,module,exports){
+},{"./Event":3,"./Idle":4,"./User":5,"./Utils":6,"./Viewport":7}],2:[function(require,module,exports){
 var Cookie = {};
 
 var getCookie = function ( name ) {
@@ -218,14 +212,10 @@ module.exports = Cookie;
 var _listeners = {};
 var _listenerQueue = {};
 
-var Event = function () {
-    this.supportedEvents = [];
-};
+var Event = function () {};
 
 
 Event.prototype.on = function (eventType, callback) {
-
-    if(this.supportedEvents.indexOf(eventType) < 0) { return; }
 
     if (typeof _listeners[eventType] === 'undefined') {
         _listeners[eventType] = [];
@@ -236,12 +226,9 @@ Event.prototype.on = function (eventType, callback) {
 
 Event.prototype.trigger = function (event) {
 
-
     if (!event.type) {
         throw new Error("Event missing 'type' property ");
     }
-
-    if(this.supportedEvents.indexOf(event.type) < 0) { return; }
 
     if (typeof _listeners[event.type] !== 'undefined') {
 
@@ -265,8 +252,6 @@ Event.prototype.trigger = function (event) {
 };
 
 Event.prototype.off = function (eventType, callback) {
-
-    if(this.supportedEvents.indexOf(event.type) < 0) { return; }
 
     if (typeof _listeners[eventType] !== 'undefined') {
         var listeners = _listeners[eventType];
@@ -295,30 +280,60 @@ Event.prototype.removeAllListeners = function () {
 
 module.exports = Event;
 },{}],4:[function(require,module,exports){
+var Idle = function () {
+
+};
+
+
+
+module.exports = Idle;
+},{}],5:[function(require,module,exports){
 var Cookie = require("./Cookie");
 
 var User = function () {
 
-    var userSession =  Cookie.getCookie('convertJSSession');
+    var keys = {
+        VISIT: 'convertJsVisit',
+        VISITOR: 'convertJsVisitor'
+    };
+
+    var visitCookie =  Cookie.getCookie(keys.VISIT);
+    var visitorCookie = Cookie.getCookie(keys.VISITOR);
+
     this.firstview = true;
-    this.session = {
+    this.visit = {
         pageviews: 1
     };
 
-    if (userSession) {
-        this.session = JSON.parse(userSession);
-        this.session.pageviews += 1;
+    this.visitor = {
+        returning: false,
+        visits: 1
+    };
+
+    if (visitCookie) {
+        this.visit = JSON.parse(visitCookie);
+        this.visit.pageviews += 1;
         this.firstview = false;
     }
 
-    Cookie.setCookie('convertJSSession', JSON.stringify(this.session));
+    //Visit only lasts while browser session
+    Cookie.setCookie(keys.VISIT, JSON.stringify(this.visit));
 
-    console.log(this);
+    if (visitorCookie) {
+        this.returning = true;
+        this.visitor = JSON.parse(visitorCookie);
+        if (this.firstview) {
+            this.visitor.visits += 1;
+        }
+    }
+
+    //Visitor lasts 30 days from last visit
+    Cookie.setCookie(keys.VISITOR, JSON.stringify(this.visitor), 30);
 
 };
 
 module.exports = User;
-},{"./Cookie":2}],5:[function(require,module,exports){
+},{"./Cookie":2}],6:[function(require,module,exports){
 var Utils = {};
 
 /**
@@ -375,7 +390,7 @@ Utils.getOrdinal = function (number) {
 };
 
 module.exports = Utils;
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 var Viewport = {
     isAtBottom: function () {
         if (!document && !window) { return; }
@@ -397,4 +412,4 @@ var Viewport = {
 };
 
 module.exports = Viewport;
-},{}]},{},[1,2,3,4,5,6]);
+},{}]},{},[1,2,3,4,5,6,7]);

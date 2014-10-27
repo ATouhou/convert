@@ -1,14 +1,10 @@
 var _listeners = {};
 var _listenerQueue = {};
 
-var Event = function () {
-    this.supportedEvents = [];
-};
+var Event = function () {};
 
 
 Event.prototype.on = function (eventType, callback) {
-
-    if(this.supportedEvents.indexOf(eventType) < 0) { return; }
 
     if (typeof _listeners[eventType] === 'undefined') {
         _listeners[eventType] = [];
@@ -19,12 +15,9 @@ Event.prototype.on = function (eventType, callback) {
 
 Event.prototype.trigger = function (event) {
 
-
     if (!event.type) {
         throw new Error("Event missing 'type' property ");
     }
-
-    if(this.supportedEvents.indexOf(event.type) < 0) { return; }
 
     if (typeof _listeners[event.type] !== 'undefined') {
 
@@ -48,8 +41,6 @@ Event.prototype.trigger = function (event) {
 };
 
 Event.prototype.off = function (eventType, callback) {
-
-    if(this.supportedEvents.indexOf(event.type) < 0) { return; }
 
     if (typeof _listeners[eventType] !== 'undefined') {
         var listeners = _listeners[eventType];
