@@ -22,7 +22,7 @@
             aggressive: false,
             sensitivity: 20,
             delay: 0,
-            throttle: 200,
+            throttle: 400,
             storage: 'cookie'
         };
 
@@ -392,12 +392,16 @@ Utils.getOrdinal = function (number) {
 module.exports = Utils;
 },{}],7:[function(require,module,exports){
 var Viewport = {
-    isAtBottom: function () {
+    isAtBottom: function (sensitivity) {
+
+        sensitivity = sensitivity || 20;
+
         if (!document && !window) { return; }
+
         var doc = document.documentElement;
         var win = window;
 
-        return ((doc.scrollHeight - win.innerHeight) === win.scrollY);
+        return ((doc.scrollHeight - win.innerHeight) < (win.scrollY + sensitivity));
     },
 
     isBelowTheFold: function () {

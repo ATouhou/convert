@@ -1,10 +1,14 @@
 var Viewport = {
-    isAtBottom: function () {
+    isAtBottom: function (sensitivity) {
+
+        sensitivity = sensitivity || 20;
+
         if (!document && !window) { return; }
+
         var doc = document.documentElement;
         var win = window;
 
-        return ((doc.scrollHeight - win.innerHeight) === win.scrollY);
+        return ((doc.scrollHeight - win.innerHeight) < (win.scrollY + sensitivity));
     },
 
     isBelowTheFold: function () {

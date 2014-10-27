@@ -21,7 +21,7 @@
             aggressive: false,
             sensitivity: 20,
             delay: 0,
-            throttle: 200,
+            throttle: 400,
             storage: 'cookie'
         };
 
