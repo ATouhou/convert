@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>ConvertJS</title>
-    <script src="../build/convert.min.js" type="text/javascript"></script>
+    <script src="../build/convert.js" type="text/javascript"></script>
     <script type="text/javascript">
 
         var convert = new Convert({
@@ -11,11 +11,21 @@
         });
 
         convert.on('exit', function (event) {
-	        console.log("conver.on('exit')");
+	        console.log("convert.on('exit')");
         });
 
-        convert.on('pagebottom', function (event) {
-            console.log("conver.on('pagebottom')");
+        convert.once('pagebottom', function (event) {
+            console.log("convert.on('pagebottom')");
+        });
+
+
+        convert.once('belowfold', function (event) {
+            console.log("convert.once('belowfold')");
+        });
+
+
+        convert.on('new', function (event) {
+           console.log("First pageview in session");
         });
 
     </script>

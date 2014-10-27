@@ -10,9 +10,6 @@
     var User = require('./User');
     var Event = require('./Event');
 
-    var root = this;
-
-
     var _scrollTimer = null;
 
     Event.prototype.supportedEvents = [
@@ -87,7 +84,7 @@
          * @private
          */
         _scrollTimer = setInterval(function () {
-            this.atBottom();
+            this.checkPosition();
         }.bind(this), config.throttle);
 
         /**
@@ -135,9 +132,14 @@
 
     Convert.prototype = Event.prototype;
 
-    Convert.prototype.atBottom = function () {
+    Convert.prototype.checkPosition = function () {
+
         if (Viewport.isAtBottom()) {
             this.trigger({ type: 'pagebottom' });
+        }
+
+        if (Viewport.isBelowTheFold()) {
+            this.trigger({ type: 'belowfold' });
         }
     };
 

@@ -24,7 +24,7 @@ module.exports = function(grunt) {
 
             js: {
                 files: ['src/**/*.js'],
-                tasks: ['concat', 'uglify']
+                tasks: ['browserify', 'uglify']
             }
         },
 
@@ -43,6 +43,7 @@ module.exports = function(grunt) {
                 eqnull: true,
                 browser: true,
                 node: true,
+                maxlen: 80,
                 globals: {
                     require: true,
                     define: true,
@@ -57,12 +58,24 @@ module.exports = function(grunt) {
 
         uglify: {
             options: {
-                banner: '/*! <%= pkg.name %> uglified by Grunt.js <%= grunt.template.today("yyyy-dd-mm") %> */\n'
+                banner: '/*! <%= pkg.name %> - v<%= pkg.version %> - ' +
+                        ' Author: <%= pkg.author %> - ' +
+                        '<%= grunt.template.today("yyyy-dd-mm") %> */\n'
             },
             dist: {
                 files: {
                     'build/<%= pkg.name %>.min.js': 'build/<%= pkg.name %>.js'
                 }
+            }
+        },
+
+        browserify: {
+            options: {
+                //transform: [ require('grunt-react').browserify ]
+            },
+            default: {
+                src: ['src/**/*.js'],
+                dest: 'build/convert.js'
             }
         }
     });
@@ -71,6 +84,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-jshint');
+    grunt.loadNpmTasks('grunt-browserify');
 
     grunt.registerTask('default', 'watch');
 };
