@@ -4,7 +4,8 @@ var User = function () {
 
     var keys = {
         VISIT: 'convertJsVisit',
-        VISITOR: 'convertJsVisitor'
+        VISITOR: 'convertJsVisitor',
+        SPLIT_TEST: 'convertJsSplitTest-'
     };
 
     var visitCookie =  Cookie.getCookie(keys.VISIT);
@@ -38,7 +39,7 @@ var User = function () {
     }
 
     //Visitor lasts 30 days from last visit
-    Cookie.setCookie(keys.VISITOR, JSON.stringify(this.visitor), 30);
+    Cookie.setCookie(keys.VISITOR, JSON.stringify(this.visitor), 30, "/");
 
 };
 

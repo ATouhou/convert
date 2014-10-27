@@ -10,6 +10,8 @@
     var User = require('./User');
     var Event = require('./Event');
     var Idle = require('./Idle');
+    var SplitTest = require('./SplitTest');
+    var Form = require('./Form');
 
     var _scrollTimer = null;
 
@@ -86,11 +88,17 @@
             }
         };
 
+        this._handleDomContentReady = function () {
+            SplitTest.init();
+        };
+
         if (typeof document !== 'undefined') {
             var doc = document.documentElement;
             doc.addEventListener('mouseleave', this._handleMouseLeave);
             doc.addEventListener('mouseenter', this._handleMouseEnter);
             doc.addEventListener('keydown', this._handleKeyDown);
+
+            document.addEventListener("DOMContentLoaded", this._handleDomContentReady);
         }
 
         if (Utils.supportsNavigationTiming()) {

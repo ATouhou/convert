@@ -11,6 +11,8 @@
     var User = require('./User');
     var Event = require('./Event');
     var Idle = require('./Idle');
+    var SplitTest = require('./SplitTest');
+    var Form = require('./Form');
 
     var _scrollTimer = null;
 
@@ -87,11 +89,17 @@
             }
         };
 
+        this._handleDomContentReady = function () {
+            SplitTest.init();
+        };
+
         if (typeof document !== 'undefined') {
             var doc = document.documentElement;
             doc.addEventListener('mouseleave', this._handleMouseLeave);
             doc.addEventListener('mouseenter', this._handleMouseEnter);
             doc.addEventListener('keydown', this._handleKeyDown);
+
+            document.addEventListener("DOMContentLoaded", this._handleDomContentReady);
         }
 
         if (Utils.supportsNavigationTiming()) {
@@ -151,7 +159,7 @@
     }
 
 }.call(this));
-},{"./Event":3,"./Idle":4,"./User":5,"./Utils":6,"./Viewport":7}],2:[function(require,module,exports){
+},{"./Event":3,"./Form":4,"./Idle":5,"./SplitTest":6,"./User":7,"./Utils":8,"./Viewport":9}],2:[function(require,module,exports){
 var Cookie = {};
 
 var getCookie = function ( name ) {
@@ -280,6 +288,10 @@ Event.prototype.removeAllListeners = function () {
 
 module.exports = Event;
 },{}],4:[function(require,module,exports){
+var Form = {};
+
+module.exports = Form;
+},{}],5:[function(require,module,exports){
 var Idle = function () {
 
 };
@@ -287,14 +299,50 @@ var Idle = function () {
 
 
 module.exports = Idle;
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
+var Cookie = require('./Cookie');
+
+var SplitTest = {};
+
+SplitTest.init = function () {
+    var splitTests = document.getElementsByClassName('split-test');
+    for (var i = 0; i < splitTests.length; i++) {
+        var splitTest = splitTests[i];
+        var variations = splitTest.getElementsByClassName('variation');
+        var splitTestName = splitTest.getAttribute('id');
+
+        var cookieName = 'convertJsSplitTest-' + splitTestName;
+        var elementId = Cookie.getCookie(cookieName);
+
+        if (!elementId) {
+            var index = Math.floor(Math.random()*variations.length);
+            elementId = variations[index].getAttribute('id');
+            Cookie.setCookie(cookieName, elementId, 90, "/");
+        }
+
+        var elm = document.getElementById(elementId);
+        elm.style.display = 'block';
+
+    }
+};
+
+SplitTest.trackSuccess = function (splitTestName) {
+    //OLD: _gaq.push(['_trackEvent', 'Videos', 'Play', 'Baby\'s First Birthday']);
+    //New:
+    //
+    ga('send', 'event', 'AB-Testing', 'click', 'nav buttons');
+};
+
+module.exports = SplitTest;
+},{"./Cookie":2}],7:[function(require,module,exports){
 var Cookie = require("./Cookie");
 
 var User = function () {
 
     var keys = {
         VISIT: 'convertJsVisit',
-        VISITOR: 'convertJsVisitor'
+        VISITOR: 'convertJsVisitor',
+        SPLIT_TEST: 'convertJsSplitTest-'
     };
 
     var visitCookie =  Cookie.getCookie(keys.VISIT);
@@ -328,12 +376,12 @@ var User = function () {
     }
 
     //Visitor lasts 30 days from last visit
-    Cookie.setCookie(keys.VISITOR, JSON.stringify(this.visitor), 30);
+    Cookie.setCookie(keys.VISITOR, JSON.stringify(this.visitor), 30, "/");
 
 };
 
 module.exports = User;
-},{"./Cookie":2}],6:[function(require,module,exports){
+},{"./Cookie":2}],8:[function(require,module,exports){
 var Utils = {};
 
 /**
@@ -390,7 +438,7 @@ Utils.getOrdinal = function (number) {
 };
 
 module.exports = Utils;
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var Viewport = {
     isAtBottom: function (sensitivity) {
 
@@ -416,4 +464,4 @@ var Viewport = {
 };
 
 module.exports = Viewport;
-},{}]},{},[1,2,3,4,5,6,7]);
+},{}]},{},[1,2,3,4,5,6,7,8,9]);
