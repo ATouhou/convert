@@ -108,7 +108,7 @@
         var addEventTrigger = function () {
 
             //New user
-            if (convert.user.firstview && !convert.user.returning) {
+            if (this.user.firstview && !this.user.returning) {
                 this.trigger({
                     type: 'new'
                 });
