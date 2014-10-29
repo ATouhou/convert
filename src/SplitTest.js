@@ -33,7 +33,7 @@ SplitTest.trackSuccess = function (splitTestName) {
     if (window.ga !== 'undefined') {
         window.ga('send', 'event', eventName, splitTestName, variationName);
     } else if (window._gaq !== 'undefined') {
-        window._gaq.push(['_trackEvent', eventName, splitTestName, variationName);
+        window._gaq.push(['_trackEvent', eventName, splitTestName, variationName]);
     }
 
 };
